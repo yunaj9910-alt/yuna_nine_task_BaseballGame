@@ -1,1 +1,72 @@
-## 🎮 Multiplayer Bulls and Cows (숫자 야구 게임)언리얼 엔진 5를 이용한 멀티플레이어 기반 숫자 야구 게임 프로젝트입니다. 클라이언트-서버 구조에서 데이터 복제(Replication)와 RPC를 활용하여 실시간 채팅 및 게임 판정 로직을 구현했습니다.### 🛠 핵심 기술 스택Engine: Unreal Engine 5Language: C++Networking: Client-Server (Listen Server), Replication, RPC (Server/Client/Multicast)UI: UMG (Unreal Motion Graphics) 바인딩### 🏗 프로젝트 구조 (Architecture)프로젝트는 언리얼의 표준 프레임워크를 준수하며, 역할에 따라 다음과 같이 분리되어 있습니다.클래스명역할 설명AynGameModeBase권한(Authority) 중심 로직: 정답 생성, 승리 판정, 게임 리셋 및 플레이어 관리.AynGameStateBase게임의 상태 관리 및 로그인 메시지 멀티캐스트 브로드캐스팅.AynPlayerController통신 가교: 입력값 전달(ServerRPC), UI 생성, 서버로부터 알림 수신(OnRep).AynPlayerState플레이어 데이터 보존: 이름, 현재 시도 횟수, 최대 기회 등 공유 데이터 관리.AynPawn게임 내 플레이어의 물리적 존재 확인 및 네트워크 역할(Role) 디버깅.### 🚀 주요 기능 및 로직1. 네트워크 실시간 채팅 및 입력 시스템플레이어가 UI에 숫자를 입력하면 ServerRPCPrintChatMessageString을 통해 서버로 전달됩니다.서버는 해당 입력이 숫자 야구의 규칙(3자리 숫자)에 맞는지 검사한 후 게임 로직을 실행합니다.2. 게임 판정 로직 (JudgeResult)서버에서 생성한 SecretNumberString과 플레이어의 입력값을 비교합니다.Strike: 숫자와 자릿수가 모두 일치Ball: 숫자는 포함되나 자릿수가 불일치결과를 채팅창과 UI 알림을 통해 모든 플레이어에게 공유합니다.3. 알림 UI 업데이트 (ReplicatedUsing)서버에서 승리자 발생 시 NotificationText 변수를 갱신합니다.클라이언트는 OnRep_NotificationText 함수를 통해 UI 위젯의 텍스트를 즉시 업데이트하며, 위젯 바인딩을 통해 데이터의 정합성을 유지합니다.4. 동적 리셋 시스템게임 종료(승리 또는 무승부) 시 FTimerHandle을 사용하여 3초의 대기 시간을 가진 후 자동으로 게임을 초기화(ResetGame)합니다.### 💡 네트워크 흐름 (Sequence)Client: 숫자 3자리 입력 -> ServerRPC 호출Server: GameMode에서 스트라이크/볼 판정Server: 판정 결과에 따라 PlayerState의 시도 횟수 갱신 및 NotificationText 설정Net: DOREPLIFETIME을 통해 모든 클라이언트에 데이터 복제Client: OnRep_NotificationText 실행 및 위젯 화면 갱신### 📝 개발 노트3D 멀미 방지: FPS 시점을 배제하고 UI 중심의 인터랙션을 채택하였습니다.확장성: yn_nine_taskFunctionLibrary를 통해 로그 출력 및 네트워크 상태 확인 코드를 공통화하여 디버깅 효율을 높였습니다.
+# # ⚾ Multiplayer Bulls and Cows (숫자 야구 게임)
+
+언리얼 엔진 5를 활용하여 제작된 **네트워크 멀티플레이어 숫자 야구 게임**입니다. 클라이언트-서버 구조에서 데이터 동기화(Replication)와 RPC(Remote Procedure Call)를 통해 실시간 채팅 판정 및 UI 업데이트를 구현하였습니다.
+
+---
+
+### ### 🛠 핵심 기술 스택
+* **Engine:** Unreal Engine 5.x
+* **Language:** C++
+* **Networking:** Listen Server 구조, Property Replication (`OnRep`), RPC (`Server`/`Client`/`Multicast`)
+* **UI:** UMG (Unreal Motion Graphics) & **C++ Data Binding**
+
+---
+
+### ### 🏗 프로젝트 아키텍처 (Core Classes)
+
+| 클래스 | 주요 역할 |
+| :--- | :--- |
+| **`AynGameModeBase`** | **Authority 로직:** 정답 번호 생성, 입력값 판정(Strike/Ball), 승리 조건 체크 및 게임 리셋 관리. |
+| **`AynPlayerController`** | **통신 인터페이스:** 로컬 입력(ServerRPC) 전달, 위젯 생성 및 `NotificationText` 변수 동기화(`OnRep`). |
+| **`AynPlayerState`** | **데이터 보관함:** 플레이어 이름, 현재 시도 횟수(`CurrentGuessCount`), 최대 기회 등의 정보를 네트워크에 공유. |
+| **`AynGameStateBase`** | **글로벌 상태:** 모든 플레이어에게 로그인 메시지 등을 브로드캐스팅(`MulticastRPC`). |
+| **`AynPawn`** | 게임 내 플레이어의 물리적 존재를 담당하며, 네트워크 역할(Role) 확인용 디버깅 로그 출력. |
+
+---
+
+### ### 🚀 주요 시스템 및 로직 설명
+
+#### 1. 네트워크 입력 및 판정 흐름
+* **Input:** 클라이언트가 채팅창에 숫자를 입력하면 `AynPlayerController`에서 `ServerRPCPrintChatMessageString`을 호출하여 서버로 메시지를 보냅니다.
+* **Judge:** 서버의 `GameMode`는 `SecretNumberString`과 입력값을 비교하여 스트라이크/볼 개수를 계산합니다.
+* **Result:** 판정 결과는 다시 모든 클라이언트의 채팅창에 출력됩니다.
+
+#### 2. 효율적인 UI 업데이트 (ReplicatedUsing)
+* 서버에서 승리자가 발생하면 `AynPlayerController`의 `NotificationText` 변수를 갱신합니다.
+* **`UPROPERTY(ReplicatedUsing = OnRep_NotificationText)`** 설정을 통해 값이 변하는 즉시 클라이언트의 `OnRep` 함수가 트리거됩니다.
+* 위젯 블루프린트에서 **Text 변수를 C++의 `NotificationText`와 직접 바인딩(Binding)** 하여, 별도의 호출 로직 없이도 데이터가 바뀌면 화면이 즉시 갱신됩니다.
+
+
+
+#### 3. 자동 게임 리셋 시스템
+* 3스트라이크(승리) 또는 모든 기회 소진(무승부) 시, 서버는 `FTimerHandle`을 통해 3초의 유예 시간을 가집니다.
+* 모든 플레이어에게 결과 메시지를 보여준 뒤, `ResetGame()`을 통해 정답지를 새로 생성하고 시도 횟수를 초기화하여 다음 라운드를 준비합니다.
+
+---
+
+### ### 📝 핵심 코드 하이라이트
+
+**[데이터 동기화 설정 - ynPlayerController.cpp]**
+```cpp
+void AynPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+    // NotificationText 변수를 모든 클라이언트에 복제하도록 등록
+	DOREPLIFETIME(ThisClass, NotificationText);
+}
+
+void AynPlayerController::OnRep_NotificationText()
+{
+    // 값이 복제되었을 때 로컬 위젯에 알림(로그) 출력
+	yn_nine_taskFunctionLibrary::MyprintString(this, NotificationText.ToString(), 5.f, FColor::Yellow);
+}
+```
+
+---
+
+### ### 🎯 개발 포인트
+* **직관적인 UI:** `IsLocalController()` 체크를 통해 각 플레이어의 화면에 맞는 최적의 UI만 생성하도록 BeginPlay 로직을 구성했습니다.
+* **유연한 데이터 구조:** `AynPlayerState`를 사용하여 접속이 끊겼다 재접속하더라도 플레이어의 점수와 상태가 유지될 수 있는 기반을 마련했습니다.
+
+---
+
