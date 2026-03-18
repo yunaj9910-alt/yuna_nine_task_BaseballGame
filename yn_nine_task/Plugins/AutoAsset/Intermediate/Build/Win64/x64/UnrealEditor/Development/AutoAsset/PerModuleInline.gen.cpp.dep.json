@@ -1,0 +1,14 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "c:\\users\\jyn99\\documents\\unreal projects\\yn_nine_task\\plugins\\autoasset\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\autoasset\\permoduleinline.gen.cpp",
+        "ProvidedModule": "",
+        "PCH": "c:\\users\\jyn99\\documents\\unreal projects\\yn_nine_task\\intermediate\\build\\win64\\x64\\yn_nine_taskeditor\\development\\unrealed\\sharedpch.unrealed.project.valapi.cpp20.h.pch",
+        "Includes": [
+            "c:\\users\\jyn99\\documents\\unreal projects\\yn_nine_task\\plugins\\autoasset\\intermediate\\build\\win64\\x64\\unrealeditor\\development\\autoasset\\definitions.autoasset.h",
+            "c:\\program files\\epic games\\ue_5.5\\engine\\source\\runtime\\core\\public\\hal\\permoduleinline.inl"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}

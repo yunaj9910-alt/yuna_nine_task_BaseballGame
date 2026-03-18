@@ -1,0 +1,25 @@
+{
+	"version": 1,
+	"changelists": [
+		{
+			"guid": "00000000000000000000000000000000",
+			"description": "Default Uncontrolled Changelist",
+			"files": [
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/Maps/Chatting.umap",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/Blueprint/Game/BP_GameModeBase.uasset",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/Blueprint/Player/BP_PlayerController.uasset",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/Blueprint/UI/WBP_ChatInput.uasset",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/Blueprint/Player/BP_PlayerState.uasset",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/Blueprint/Game/BP_GameStateBase.uasset",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/Blueprint/UI/WBP_NotificationText.uasset",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/SW_30247__streety__sword5.uasset",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/M_Beta_HighLimbsGeoSG3.uasset",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/M_Beta_Joints_MAT1.uasset",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/SK_X_Bot.uasset",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/SKEL_X_Bot.uasset",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/PHYS_X_Bot.uasset",
+				"C:/Users/jyn99/Documents/Unreal Projects/yn_nine_task/Content/yn_nine_task/AS_X_Bot_Anim.uasset"
+			]
+		}
+	]
+}
