@@ -31,6 +31,9 @@ public:
 
 	virtual void GetLifetimeReplicatedProps(TArray<class FLifetimeProperty>& OutLifetimeProps) const override;
 
+	UFUNCTION()
+	void OnRep_NotificationText();
+
 protected:
 	UPROPERTY(EditDefaultsOnly)
 	TSubclassOf<UynChatInput>ChatInputWidgetClass;
@@ -46,6 +49,6 @@ protected:
 	TObjectPtr<UUserWidget> NotificationTextWidgetInstance;
 
 public:
-	UPROPERTY(Replicated, BlueprintReadOnly)
+	UPROPERTY(ReplicatedUsing = OnRep_NotificationText, BlueprintReadOnly)
 	FText NotificationText;
 };

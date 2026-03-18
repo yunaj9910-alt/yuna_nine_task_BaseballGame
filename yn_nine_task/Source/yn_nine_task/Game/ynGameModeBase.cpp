@@ -62,7 +62,7 @@ FString AynGameModeBase::GenerateSecretNumber()
 	{
 		Result.Append(FString::FromInt(Numbers[i]));
 	}
-
+	UE_LOG(LogTemp, Error, TEXT("%s"), *Result);
 	return Result;
 }
 
@@ -131,7 +131,7 @@ void AynGameModeBase::BeginPlay()
 
 void AynGameModeBase::PrintChatMessageString(AynPlayerController* InChattingPlayerController, const FString& InChatMessageString)
 {
-	FString ChatMessageString = InChatMessageString;
+	/*FString ChatMessageString = InChatMessageString;
 	int Index = InChatMessageString.Len() - 3;
 	FString GuessNumberString = InChatMessageString.RightChop(Index);
 	if (IsGuessNumberString(GuessNumberString) == true)
@@ -155,7 +155,7 @@ void AynGameModeBase::PrintChatMessageString(AynPlayerController* InChattingPlay
 		JudgeGame(InChattingPlayerController, StrikeCount);
 	}
 	else
-	{
+	{*/
 	/*for (TActorIterator<AynPlayerController> It(GetWorld()); It; ++It)
 	{
 		AynPlayerController* ynPlayerController = *It;
@@ -164,6 +164,60 @@ void AynGameModeBase::PrintChatMessageString(AynPlayerController* InChattingPlay
 		ynPlayerController->ClientRPCPrintChatMessageString(InChatMessageString);
 	}
 	}*/
+		/*InChattingPlayerController->ClientRPCPrintChatMessageString(
+			TEXT("Invalid input. Please enter 3 unique digits (1-9). No attempt consumed."));
+	}*/
+	
+	AynPlayerState* PS = InChattingPlayerController->GetPlayerState<AynPlayerState>();
+	if (IsValid(PS) == true)
+	{
+		if (PS->CurrentGuessCount >= PS->MaxGuessCount)
+		{
+			InChattingPlayerController->ClientRPCPrintChatMessageString(
+				TEXT("No attempts remaining."));
+			return;
+		}
+	}
+
+	int Index = InChatMessageString.Len() - 3;
+	FString GuessNumberString = InChatMessageString.RightChop(Index);
+
+	
+	bool bValidFormat = false;
+	if (Index > 0)
+	{
+	
+		TCHAR CharBeforeGuess = InChatMessageString[Index - 1];
+		if (CharBeforeGuess == ' ')
+		{
+			bValidFormat = true;
+		}
+	}
+
+	if (bValidFormat == true && IsGuessNumberString(GuessNumberString) == true)
+	{
+		
+		IncreaseGuessCount(InChattingPlayerController);
+		FString JudgeResultString = JudgeResult(SecretNumberString, GuessNumberString);
+
+		
+		for (TActorIterator<AynPlayerController> It(GetWorld()); It; ++It)
+		{
+			AynPlayerController* ynPlayerController = *It;
+			if (IsValid(ynPlayerController) == true)
+			{
+				FString CombinedMessageString = InChatMessageString + TEXT(" -> ") + JudgeResultString;
+				ynPlayerController->ClientRPCPrintChatMessageString(CombinedMessageString);
+			}
+		}
+
+		
+		int32 StrikeCount = FCString::Atoi(*JudgeResultString.Left(1));
+		JudgeGame(InChattingPlayerController, StrikeCount);
+	}
+	else
+	{
+		
 		InChattingPlayerController->ClientRPCPrintChatMessageString(
 			TEXT("Invalid input. Please enter 3 unique digits (1-9). No attempt consumed."));
 	}
@@ -238,28 +292,34 @@ void AynGameModeBase::JudgeGame(AynPlayerController* InChattingPlayerController,
 {
 	if (3 == InStrikeCount)
 	{
-		// 3스트라이크! 승리
+		// 3스트라이크 → 승리
 		AynPlayerState* WinnerPS = InChattingPlayerController->GetPlayerState<AynPlayerState>();
 		if (IsValid(WinnerPS) == true)
 		{
-			FString WinMessage = WinnerPS->PlayerNameString + TEXT("has won the game!");
+			FString WinMessage = WinnerPS->PlayerNameString + TEXT(" has won the game!");
 
-			// 모든 플레이어한테 승리 메시지 전달
 			for (const auto& ynPlayerController : AllPlayerControllers)
 			{
 				if (IsValid(ynPlayerController) == true)
 				{
+					// 서버에서 NotificationText 값을 바꾸면
+					// ReplicatedUsing 덕분에 클라이언트에서 OnRep_NotificationText() 가 자동 호출돼요.
+					// 단, 서버(ListenServer) 자신은 OnRep 이 안 불리므로 직접 호출해요.
 					ynPlayerController->NotificationText = FText::FromString(WinMessage);
+					if (ynPlayerController->HasAuthority())
+					{
+						ynPlayerController->OnRep_NotificationText();
+					}
 				}
 			}
 		}
 
-		// 게임 리셋
-		ResetGame();
+		// 3초 뒤 리셋 (메시지를 볼 시간을 줘요)
+		GetWorldTimerManager().SetTimer(ResetTimerHandle, this, &AynGameModeBase::ResetGame, 3.0f, false);
 	}
 	else
 	{
-		// 아직 아무도 못 맞혔을 때 → 모두 기회를 다 썼는지 확인
+		// 모두 기회를 다 썼는지 확인
 		bool bIsDraw = true;
 		for (const auto& ynPlayerController : AllPlayerControllers)
 		{
@@ -268,7 +328,6 @@ void AynGameModeBase::JudgeGame(AynPlayerController* InChattingPlayerController,
 			{
 				if (PS->CurrentGuessCount < PS->MaxGuessCount)
 				{
-					// 아직 기회가 남은 플레이어가 있으면 무승부 아님
 					bIsDraw = false;
 					break;
 				}
@@ -277,17 +336,20 @@ void AynGameModeBase::JudgeGame(AynPlayerController* InChattingPlayerController,
 
 		if (true == bIsDraw)
 		{
-			// 모든 플레이어 기회 소진 → 무승부
 			for (const auto& ynPlayerController : AllPlayerControllers)
 			{
 				if (IsValid(ynPlayerController) == true)
 				{
 					ynPlayerController->NotificationText = FText::FromString(TEXT("Draw! Nobody got the answer."));
+					if (ynPlayerController->HasAuthority())
+					{
+						ynPlayerController->OnRep_NotificationText();
+					}
 				}
 			}
 
-			// 게임 리셋
-			ResetGame();
+			// 3초 뒤 리셋
+			GetWorldTimerManager().SetTimer(ResetTimerHandle, this, &AynGameModeBase::ResetGame, 3.0f, false);
 		}
 	}
 }

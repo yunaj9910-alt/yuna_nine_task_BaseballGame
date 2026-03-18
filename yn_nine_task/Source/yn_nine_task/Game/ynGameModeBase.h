@@ -38,4 +38,6 @@ protected:
 	FString SecretNumberString;
 
 	TArray<TObjectPtr<AynPlayerController>>AllPlayerControllers;
+
+	FTimerHandle ResetTimerHandle;
 };

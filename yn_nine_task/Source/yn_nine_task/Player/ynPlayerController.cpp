@@ -10,6 +10,7 @@
 #include "Game/ynGameModeBase.h"
 #include "ynPlayerState.h"
 #include "Net/UnrealNetwork.h"
+#include "Misc/OutputDeviceNull.h"
 
 
 AynPlayerController::AynPlayerController()
@@ -21,11 +22,14 @@ void AynPlayerController::BeginPlay()
 {
 	Super::BeginPlay();
 
+
 	if (IsLocalController() == false)
 	{
 		return;
+
 	}
 
+	bShowMouseCursor = true;
 	FInputModeUIOnly InputModeUIOnly;
 	SetInputMode(InputModeUIOnly);
 	if (IsValid(ChatInputWidgetClass) == true)
@@ -77,6 +81,15 @@ void AynPlayerController::GetLifetimeReplicatedProps(TArray<class FLifetimePrope
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 	DOREPLIFETIME(ThisClass, NotificationText);
+}
+
+void AynPlayerController::OnRep_NotificationText()
+{
+	if (IsLocalController() && IsValid(NotificationTextWidgetInstance))
+	{
+		
+		yn_nine_taskFunctionLibrary::MyprintString(this, NotificationText.ToString(), 5.f, FColor::Yellow);
+	}
 }
 
 void AynPlayerController::ClientRPCPrintChatMessageString_Implementation(const FString& InChatMessageString)
